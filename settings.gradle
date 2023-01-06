@@ -14,3 +14,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Unpacker"
 include ':app'
+include ':annotation'
+include ':processor'
