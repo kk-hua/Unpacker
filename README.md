@@ -11,6 +11,25 @@
 > - long
 > - byte
 
+#### 下载
+
+
+
+```groovy
+allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+}
+	
+	
+dependencies {
+    implementation 'com.github.kk-hua.Unpacker:annotation:v0.0.1-alpha'
+    kapt 'com.github.kk-hua.Unpacker:processor:v0.0.1-alpha'
+}
+```
+
 #### **示例**
 
 ```java
