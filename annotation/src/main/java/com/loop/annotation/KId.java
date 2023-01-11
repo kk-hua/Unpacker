@@ -18,5 +18,8 @@ import java.lang.annotation.Target;
 @Target(value = ElementType.FIELD)
 @Retention(value = RetentionPolicy.SOURCE)
 public @interface KId {
+    /*指令编号，每条指令唯一编号*/
+    int cmd() default 0;
+
     String value() default "";
 }

@@ -1,4 +1,4 @@
-package com.loop.processor.render;
+package com.loop.render;
 
 /**
  * 解析器回调
@@ -15,5 +15,5 @@ public interface KRenderCallback {
      * @param cmd
      * @param obj
      */
-    void onKRenderFrame(int cmd,Object obj);
+    void onKRenderFrame(int cmd, Object obj);
 }

@@ -32,7 +32,7 @@ import java.io.File;
  */
 public class RenderGenerator {
     private static final String FOUR_WHITESPACES = "    ";
-    private static final String RENDER_PACKAGE_NAME = "com.loop.processor.render";
+    private static final String RENDER_PACKAGE_NAME = "com.loop.render";
 
     private File outputFile;
 

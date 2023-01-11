@@ -7,7 +7,7 @@ package com.loop.processor.utils;
  * @updateAuthor $
  * @updateDes
  */
-public class StringUtil {
+public class MethodUtil {
 
     /**
      * 首字母大写(进行字母的ascii编码前移，效率是最高的)

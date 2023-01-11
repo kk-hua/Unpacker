@@ -3,11 +3,16 @@ package com.loop.processor;
 import com.google.auto.service.AutoService;
 import com.loop.annotation.KField;
 import com.loop.annotation.KId;
+import com.loop.processor.e.RenderEntity;
+import com.loop.processor.e.RenderField;
+import com.loop.processor.utils.ClassCreatorProxy;
+import com.loop.processor.utils.RenderGeneratorPlus;
 import com.squareup.javapoet.JavaFile;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,6 +43,7 @@ public class RenderProcessor extends AbstractProcessor {
     private Messager mMessage;
     private Elements mElementUtils;
     private final Map<String, ClassCreatorProxy> mProxyMap = new HashMap<>();
+    private final Map<String, RenderEntity> mProxyLinkedMap = new LinkedHashMap<>();
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -64,8 +70,73 @@ public class RenderProcessor extends AbstractProcessor {
         //所有的@KId注解
         Set<? extends Element> kIdElements = roundEnv.getElementsAnnotatedWith(KId.class);
 
+
+        for (Element kIdElement : kIdElements) {
+            VariableElement variableElement = (VariableElement) kIdElement;
+            TypeElement classElement = (TypeElement) variableElement.getEnclosingElement();
+            //获取类名
+            String fullClassName = classElement.getQualifiedName().toString();
+            String simpleClassName = classElement.getSimpleName().toString();
+            RenderEntity renderEntity = mProxyLinkedMap.get(fullClassName);
+
+            //每个类中只有第一个@KId注解标记有效
+            if (null == renderEntity) {
+                KId kIdAnnotation = variableElement.getAnnotation(KId.class);
+                renderEntity = new RenderEntity(fullClassName, simpleClassName, kIdAnnotation.cmd());
+                mProxyLinkedMap.put(fullClassName, renderEntity);
+            }
+        }
+
         //所有的@KField注解
         Set<? extends Element> kFieldElements = roundEnv.getElementsAnnotatedWith(KField.class);
+
+        RenderField tempRenderField;
+        for (Element element : kFieldElements) {
+            VariableElement variableElement = (VariableElement) element;
+            TypeElement classElement = (TypeElement) variableElement.getEnclosingElement();
+
+            //获取类名
+            String fullClassName = classElement.getQualifiedName().toString();
+
+            //根据类名存放
+            RenderEntity proxy = mProxyLinkedMap.get(fullClassName);
+
+            //每个解析实体类都必须有一个 @KId
+            if (proxy == null) {
+                mMessage.printMessage(Diagnostic.Kind.ERROR, " --> create " + fullClassName + " class in not found annotation @KId");
+                continue;
+            }
+
+            //获取@KField注解值
+//            mMessage.printMessage(Diagnostic.Kind.ERROR, " --> create " + variableElement.asType().toString() + " @KId");
+            KField bindAnnotation = variableElement.getAnnotation(KField.class);
+            tempRenderField = new RenderField(
+                    variableElement.getSimpleName().toString(),//属性名称
+                    variableElement.asType().toString(),//属性类型
+                    bindAnnotation.index(),//开始下标
+                    bindAnnotation.byteLen()//属性字节长度
+            );
+            proxy.renderFields.add(tempRenderField);
+        }
+        //通过遍历mProxyMap，创建java文件
+        for (String key : mProxyLinkedMap.keySet()) {
+            RenderEntity proxyInfo = mProxyLinkedMap.get(key);
+            JavaFile javaFile = JavaFile.builder(proxyInfo.fullClazzName + "_render", RenderGeneratorPlus.generator(proxyInfo)).build();
+            try {
+                //生成Java文件
+                javaFile.writeTo(processingEnv.getFiler());
+            } catch (IOException e) {
+                mMessage.printMessage(Diagnostic.Kind.NOTE, " --> create " + proxyInfo.fullClazzName + "error");
+            }
+        }
+
+        mMessage.printMessage(Diagnostic.Kind.NOTE, "process finish ...");
+
+
+        /////////////////////////////////////////////////////
+
+        //所有的@KField注解
+       /* Set<? extends Element> kFieldElements = roundEnv.getElementsAnnotatedWith(KField.class);
 
         for (Element element : kFieldElements) {
             VariableElement variableElement = (VariableElement) element;
@@ -100,7 +171,7 @@ public class RenderProcessor extends AbstractProcessor {
             }
         }
 
-        mMessage.printMessage(Diagnostic.Kind.NOTE, "process finish ...");
+        mMessage.printMessage(Diagnostic.Kind.NOTE, "process finish ...");*/
         return true;
     }
 }

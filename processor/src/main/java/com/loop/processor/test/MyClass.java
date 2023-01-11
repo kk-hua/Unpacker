@@ -1,4 +1,4 @@
-package com.loop.processor;
+package com.loop.processor.test;
 
 import com.loop.annotation.KField;
 import com.loop.annotation.KId;

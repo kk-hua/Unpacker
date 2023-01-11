@@ -1,4 +1,4 @@
-package com.loop.processor;
+package com.loop.processor.utils;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
