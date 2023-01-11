@@ -2,6 +2,7 @@ package com.loop.processor.utils;
 
 import com.loop.processor.e.RenderEntity;
 import com.loop.processor.e.RenderField;
+import com.loop.render.IRender;
 import com.loop.render.KRenderCallback;
 import com.loop.utils.ByteArrayConvertUtil;
 import com.squareup.javapoet.ArrayTypeName;
@@ -33,21 +34,28 @@ public class RenderGeneratorPlus {
 
 //        FieldSpec type;
         return TypeSpec
-                .classBuilder(proxyInfo.simpleClassName + "_render")
-                .addSuperinterface(ClassName.get("com.loop.render", "IRender"))
+                .classBuilder(proxyInfo.simpleClassName + "_Render")
+                .addSuperinterface(ParameterizedTypeName.get(ClassName.get(IRender.class), ClassName.bestGuess(proxyInfo.fullClazzName)))
                 .addModifiers(Modifier.PUBLIC)
 //                .addField(createRenderEntityField())//实体类信息，用于javapoet生成代码
+                .addField(createValueField(proxyInfo))//解析数据缓存
                 .addField(createCmdField(proxyInfo))//实体类编号
 //                .addField(type = createFieldType())//实体类编号
-                .addField(createKRenderCallbackField())//解析回调属性
+//                .addField(createKRenderCallbackField())//解析回调属性
 //                .addField(createVariableElementsField())//解析属性字段
-                .addMethod(createConstructorMethod())//构造方法
+//                .addMethod(createConstructorMethod())//构造方法
                 .addMethod(createMethodRender2(proxyInfo))
                 .build();
     }
 
     private static FieldSpec createRenderEntityField() {
         return FieldSpec.builder(RenderEntity.class, "mRenderEntity", Modifier.PRIVATE)
+                .build();
+    }
+
+    private static FieldSpec createValueField(RenderEntity proxyInfo) {
+        return FieldSpec.builder(ClassName.bestGuess(proxyInfo.fullClazzName), "mValue", Modifier.PRIVATE, Modifier.FINAL)
+                .initializer("new $N()", proxyInfo.simpleClassName)
                 .build();
     }
 
@@ -91,21 +99,23 @@ public class RenderGeneratorPlus {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ArrayTypeName.of(byte.class), "src")
-                .addStatement("$T tempEntity = new $T()", className, className);
-
+                .returns(ClassName.bestGuess(proxyInfo.fullClazzName));
+//                .addStatement("$T tempEntity = new $T()", className, className);
         int limitLength;
         for (RenderField renderField : proxyInfo.renderFields) {
             limitLength = renderField.index + renderField.byteLen;
             String methodName = MethodUtil.getMethodName(renderField.name);
             builder.beginControlFlow("if(src.length >= $L)", limitLength)
                     .addStatement("byte[] valueArr = $T.copyOfRange(src, $L, $L)", Arrays.class, renderField.index, limitLength)
-                    .addStatement("tempEntity.set$N(($N)$T.convert($S, valueArr))", methodName, renderField.attrType, ByteArrayConvertUtil.class, renderField.attrType)
+                    .addStatement("mValue.set$N(($N)$T.convert($S, valueArr))", methodName, renderField.attrType, ByteArrayConvertUtil.class, renderField.attrType)
                     .endControlFlow();
         }
+        builder.addStatement("return mValue");
 
-        builder.beginControlFlow("if(mRenderCallback!=null)")
-                .addStatement("mRenderCallback.onKRenderFrame(cmd,tempEntity)")
-                .endControlFlow();
+//        builder.beginControlFlow("if(mRenderCallback!=null)")
+//                .addStatement("mRenderCallback.onKRenderFrame(cmd,tempEntity)")
+//                .endControlFlow();
+
 
         return builder.build();
 

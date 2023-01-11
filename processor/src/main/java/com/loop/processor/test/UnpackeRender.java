@@ -14,7 +14,7 @@ import java.util.List;
  * @updateAuthor $
  * @updateDes
  */
-public class UnpackeRender implements IRender {
+public class UnpackeRender implements IRender<Object> {
 
     /**/
     private RenderEntity mRenderEntity;
@@ -33,7 +33,7 @@ public class UnpackeRender implements IRender {
     }
 
     @Override
-    public void render(byte[] src) {
+    public Object render(byte[] src) {
         int count = 0;
         //没有需要解析数据直接返回
         if (
@@ -41,7 +41,7 @@ public class UnpackeRender implements IRender {
                 renderFieldList == null ||
                         (count = renderFieldList.size()) == 0
         ) {
-            return;
+            return null;
         }
 
 //        MyClass myClass = new MyClass();
@@ -78,6 +78,7 @@ public class UnpackeRender implements IRender {
             e.printStackTrace();
         }*/
 //        myClass.setHead();
+        return null;
     }
 
 //    private boolean

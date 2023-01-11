@@ -7,12 +7,12 @@ package com.loop.render;
  * @updateAuthor $
  * @updateDes
  */
-public interface IRender {
+public interface IRender<T> {
 
     /**
      * 解析数据
      *
      * @param src
      */
-    void render(byte[] src);
+    T render(byte[] src);
 }

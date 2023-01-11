@@ -7,12 +7,15 @@ import com.loop.processor.e.RenderEntity;
 import com.loop.processor.e.RenderField;
 import com.loop.processor.utils.ClassCreatorProxy;
 import com.loop.processor.utils.RenderGeneratorPlus;
+import com.loop.processor.utils.RenderPoolGenerator;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -118,10 +121,15 @@ public class RenderProcessor extends AbstractProcessor {
             );
             proxy.renderFields.add(tempRenderField);
         }
+        String poolPackerName = "";
+        Map<Integer, String> renderFullNameList = new LinkedHashMap();
         //通过遍历mProxyMap，创建java文件
         for (String key : mProxyLinkedMap.keySet()) {
+            mMessage.printMessage(Diagnostic.Kind.NOTE, " --> create1 " + key + "error");
             RenderEntity proxyInfo = mProxyLinkedMap.get(key);
-            JavaFile javaFile = JavaFile.builder(proxyInfo.fullClazzName + "_render", RenderGeneratorPlus.generator(proxyInfo)).build();
+            poolPackerName = ClassName.bestGuess(proxyInfo.fullClazzName).packageName();
+            renderFullNameList.put(proxyInfo.cmd, poolPackerName + ".render." + proxyInfo.simpleClassName + "_Render");
+            JavaFile javaFile = JavaFile.builder(poolPackerName + ".render", RenderGeneratorPlus.generator(proxyInfo)).build();
             try {
                 //生成Java文件
                 javaFile.writeTo(processingEnv.getFiler());
@@ -129,6 +137,18 @@ public class RenderProcessor extends AbstractProcessor {
                 mMessage.printMessage(Diagnostic.Kind.NOTE, " --> create " + proxyInfo.fullClazzName + "error");
             }
         }
+
+        //生成解析器缓存池代码
+        if (!poolPackerName.isEmpty()) {
+            JavaFile javaFile = JavaFile.builder(poolPackerName, RenderPoolGenerator.generator(renderFullNameList)).build();
+            try {
+                //生成Java文件
+                javaFile.writeTo(processingEnv.getFiler());
+            } catch (IOException e) {
+                mMessage.printMessage(Diagnostic.Kind.NOTE, " --> create2 " + poolPackerName + "error");
+            }
+        }
+
 
         mMessage.printMessage(Diagnostic.Kind.NOTE, "process finish ...");
 
